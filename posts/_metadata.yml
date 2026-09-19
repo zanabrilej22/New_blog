@@ -1,0 +1,9 @@
+# options specified here apply to every post in the posts/ folder
+
+# freeze computational output (re-run only when a post changes)
+freeze: auto
+
+# banner-style title at the top of each post
+title-block-banner: true
+
+author: "Zana Brilej"

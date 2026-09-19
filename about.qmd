@@ -1,0 +1,43 @@
+---
+title: "Zana Brilej"
+subtitle: "PhD student · Department of Oncology-Pathology · Karolinska Institutet"
+image: profile.jpg
+about:
+  template: trestles
+  image-shape: round
+  image-width: 14em
+  links:
+    - icon: github
+      text: GitHub
+      href: https://github.com/YOUR-USERNAME
+    - icon: linkedin
+      text: LinkedIn
+      href: https://www.linkedin.com/in/YOUR-PROFILE
+    - icon: envelope
+      text: Email
+      href: mailto:YOUR.EMAIL@ki.se
+---
+
+## About me
+
+Hi! I am Zana, a PhD student in the Department of Oncology-Pathology at Karolinska Institutet, based at BioClinicum in Solna.
+
+<!-- Write a few sentences about yourself here: your background, how you ended up in cancer research, what you enjoy outside the lab... -->
+
+## My research
+
+My PhD project is about **immune evasion in Merkel cell carcinoma**, a rare and aggressive skin cancer. Immunotherapy with PD-1/PD-L1 checkpoint inhibitors works very well for some patients, but not for all of them. I am trying to understand why some tumours do not respond.
+
+<!-- Add more detail if you want: methods you use, which data you work with, why reproducible bioinformatics matters for your project... -->
+
+## Why this blog?
+
+I started this blog during the course *Reproducible Research in Bioinformatics and Computational Biology* (September 2026). It is a report of what I did during the course, and a notebook I can come back to whenever I need to remember how to use Pixi, containers, Nextflow or nf-core.
+
+## Education
+
+<!-- Example format, replace with your own:
+**PhD in Medical Science** · Karolinska Institutet · 20XX – present
+
+**MSc in ...** · University of ... · 20XX – 20XX
+-->
