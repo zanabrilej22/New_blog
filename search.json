@@ -1,82 +1,5 @@
 [
   {
-    "objectID": "about.html",
-    "href": "about.html",
-    "title": "Zana Brilej",
-    "section": "",
-    "text": "Hi! I am Zana, a second-year PhD student at Karolinska Institutet. As you can see I love pasta. I spend most of my free time dancing, running, and beeing outdoors."
-  },
-  {
-    "objectID": "about.html#about-me",
-    "href": "about.html#about-me",
-    "title": "Zana Brilej",
-    "section": "",
-    "text": "Hi! I am Zana, a second-year PhD student at Karolinska Institutet. As you can see I love pasta. I spend most of my free time dancing, running, and beeing outdoors."
-  },
-  {
-    "objectID": "about.html#my-research",
-    "href": "about.html#my-research",
-    "title": "Zana Brilej",
-    "section": "My research",
-    "text": "My research\nMy PhD project is about immune evasion in Merkel cell carcinoma, a rare and aggressive skin cancer. I am trying to understand why some tumours do not respond to immunotherapy."
-  },
-  {
-    "objectID": "about.html#why-this-blog",
-    "href": "about.html#why-this-blog",
-    "title": "Zana Brilej",
-    "section": "Why this blog?",
-    "text": "Why this blog?\nI started this blog during the course Reproducible Research in Bioinformatics and Computational Biology (September 2026). I use it as a report of what we did during the course, and a notebook I can come back to whenever I need to remember how to use the tools we learned."
-  },
-  {
-    "objectID": "posts/wednesday/index.html",
-    "href": "posts/wednesday/index.html",
-    "title": "Wednesday: Containers and my first Nextflow workflows",
-    "section": "",
-    "text": "First we learned about containers and ran our QC tools inside them with Apptainer. Then we learned the basics of the workflow manager Nextflow and used it to build a small RNA-seq workflow (index → quantify → QC → report)."
-  },
-  {
-    "objectID": "posts/wednesday/index.html#what-we-did-today",
-    "href": "posts/wednesday/index.html#what-we-did-today",
-    "title": "Wednesday: Containers and my first Nextflow workflows",
-    "section": "",
-    "text": "First we learned about containers and ran our QC tools inside them with Apptainer. Then we learned the basics of the workflow manager Nextflow and used it to build a small RNA-seq workflow (index → quantify → QC → report)."
-  },
-  {
-    "objectID": "posts/wednesday/index.html#part-1-containers",
-    "href": "posts/wednesday/index.html#part-1-containers",
-    "title": "Wednesday: Containers and my first Nextflow workflows",
-    "section": "Part 1: Containers",
-    "text": "Part 1: Containers\n\nWhat is a container?\nA Pixi environment packs the tools. A container goes one step further: it packs the tools and a whole operating system into a single file, called an image. Because the operating system travels with it, a container runs the same way on my laptop, on a colleague’s computer and on a cluster. Images do not change once they are built, so they stay stable over time.\nPopular container programs are Docker, Podman and Apptainer (earlier called Singularity). On shared servers like HPC2N, Apptainer is the right choice.\n\n\nGetting an image\nTwo good places to find images:\n\nDocker Hub: images that people have uploaded. The biocontainers profile has many well-built bioinformatics tools.\nSeqera Containers: builds an image on request from conda-forge/bioconda packages, and can put several tools into one image. Choose Singularity as the format.\n\n\n# from Docker Hub (note the docker:// prefix)\napptainer pull vcftools_0.1.16-1.sif docker://biocontainers/vcftools:v0.1.16-1-deb_cv1\n\n# from Seqera (note the oras:// prefix)\napptainer pull vcftools_0.1.17.sif oras://community.wave.seqera.io/library/vcftools:0.1.17--b541aa8d9f9213f9\n\nThe first name (vcftools_0.1.17.sif) is what the file is called on my computer. Putting the tool name and version in it makes it clear what is inside.\n\n\nUsing a container\n\n# run one command inside the container (\"from the outside\")\napptainer exec vcftools_0.1.17.sif vcftools --version\n\n# open a shell inside the container (\"from the inside\"), type exit to leave\napptainer shell vcftools_0.1.17.sif\n\n# make a folder from outside visible inside the container with -B outside:inside\napptainer exec -B ../data:/rawdata fastqc_0.12.1.sif ls /rawdata\n\nexec vs run:\n\napptainer exec runs the command I give it. This is what I use most.\napptainer run first runs the container’s built-in runscript (its default action).\n\n\n\nBuilding my own container\nIf nobody has made an image for a tool, I can build one from a definition file. The course example was a cow that tells the date:\n\n\nlolcow.def\n\nBootstrap: docker\nFrom: ubuntu:22.04\n\n%post\n    apt-get -y update\n    apt-get -y install cowsay lolcat fortune\n\n%environment\n    export LC_ALL=C\n    export PATH=/usr/games:$PATH\n\n%runscript\n    date | cowsay | lolcat\n\n\nFrom: which operating system to start from\n%post commands that install things\n%environment settings available when the container runs\n%runscript what apptainer run does\n\n\napptainer build lolcow.sif lolcow.def\napptainer run lolcow.sif\n\n\n\nQC with containers\nWe repeated Tuesday’s QC, but with FastQC and MultiQC from containers instead of the Pixi environment. The only change in the SLURM script is the command line:\n\n\nscripts/fastqc_container.sh\n\n#! /bin/bash -l\n#SBATCH -A &lt;project_ID&gt;\n#SBATCH -t 30:00\n#SBATCH -n 1\n\napptainer exec ../containers/fastqc_0.12.1.sif fastqc -o ../fastqc --noextract ../data/*fastq.gz\n\nMultiQC from the outside and from the inside:\n\n# outside\napptainer exec containers/multiqc.sif multiqc fastqc -o multiqc\n\n# inside\napptainer shell containers/multiqc.sif\nmultiqc fastqc -o multiqc\nexit"
-  },
-  {
-    "objectID": "posts/wednesday/index.html#part-2-nextflow-basics",
-    "href": "posts/wednesday/index.html#part-2-nextflow-basics",
-    "title": "Wednesday: Containers and my first Nextflow workflows",
-    "section": "Part 2: Nextflow basics",
-    "text": "Part 2: Nextflow basics\n\nWhy a workflow manager?\nA real analysis is a chain of steps, and each step runs on many samples. Nextflow:\n\nconnects the steps so the output of one becomes the input of the next,\nruns independent tasks in parallel,\nremembers what already finished, so I can resume after an error,\nseparates what to run (the workflow) from where to run it (laptop, cluster, cloud). This is called execution abstraction.\n\n\n\nThe building blocks\n\nprocess: one step, e.g. “run FastQC”. It has input, output and a script.\nchannel: a queue that carries data from one process to the next.\nworkflow: the part that connects processes and channels.\nexecutor: where the tasks run (local or slurm).\n\n\n\n\n\n\nflowchart LR\n    A([\"greeting_ch&lt;br/&gt;'Hello world!'\"]) --&gt; B[\"SPLITLETTERS\"]\n    B --&gt; C([\"chunk_aa, chunk_ab\"])\n    C --&gt;|flatten| D[\"CONVERTTOUPPER\"]\n    D --&gt; E([\"HELLO&lt;br/&gt;WORLD!\"])\n\n\n\n\n\n\n\n\nSetting up\n\nscreen -S nextflow\ncp -r /path/to/repbio26/common_data/nf-training .\ncd nf-training\npixi init -c conda-forge -c bioconda\npixi add nextflow\n\n\n\nhello.nf\n\n\nhello.nf\n\n#!/usr/bin/env nextflow\n\nparams.greeting = 'Hello world!'          // a parameter I can change from the command line\n\nprocess SPLITLETTERS {\n    input:\n    val x                                  // a value\n\n    output:\n    path 'chunk_*'                         // files starting with chunk_\n\n    script:\n    \"\"\"\n    printf '$x' | split -b 6 - chunk_\n    \"\"\"\n}\n\nprocess CONVERTTOUPPER {\n    input:\n    path y\n\n    output:\n    stdout                                 // whatever is printed\n\n    script:\n    \"\"\"\n    cat $y | tr '[a-z]' '[A-Z]'\n    \"\"\"\n}\n\nworkflow {\n    greeting_ch = Channel.of(params.greeting)\n    letters_ch  = SPLITLETTERS(greeting_ch)\n    results_ch  = CONVERTTOUPPER(letters_ch.flatten())   // flatten: one task per chunk\n    results_ch.view{ it }\n}\n\n\npixi run nextflow run hello.nf\n\nOutput:\nexecutor &gt;  local (3)\n[96/fd5f07] SPLITLETTERS (1)   [100%] 1 of 1 ✔\n[7e/dad424] CONVERTTOUPPER (2) [100%] 2 of 2 ✔\nHELLO\nWORLD!\nThe codes like 96/fd5f07 are the start of the folder in work/ where that task ran. It is useful for debugging. HELLO and WORLD! can come in any order because the two tasks run in parallel.\n\n\nResume and parameters\n\n# after changing a process: only the changed part is re-run, the rest comes from the cache\npixi run nextflow run hello.nf -resume\n\n# change a parameter from the command line (two dashes = pipeline parameter)\npixi run nextflow run hello.nf -resume --greeting 'Bonjour le monde!'\n\n\n\n\n\n\n\nNoteOne dash or two?\n\n\n\n-resume has one dash, so it is an option for Nextflow itself. --greeting has two dashes, so it is a parameter of my pipeline.\n\n\nSettings can come from many places. The most important ones, from strongest to weakest: command line (--param) → -params-file → -c my.config → nextflow.config in the current folder → values in the script.\n\n\nCleaning up\nThe work/ folder grows fast.\n\npixi run nextflow log                        # list previous runs in this folder\npixi run nextflow clean -f                   # remove work files\npixi run nextflow clean -before &lt;run_name&gt; -f"
-  },
-  {
-    "objectID": "posts/wednesday/index.html#part-3-a-simple-rna-seq-workflow-with-nextflow",
-    "href": "posts/wednesday/index.html#part-3-a-simple-rna-seq-workflow-with-nextflow",
-    "title": "Wednesday: Containers and my first Nextflow workflows",
-    "section": "Part 3: A simple RNA-seq workflow with Nextflow",
-    "text": "Part 3: A simple RNA-seq workflow with Nextflow\nWe built this workflow step by step in script1.nf to script7.nf:\n\n\n\n\n\nflowchart TD\n    T([transcriptome.fa]) --&gt; IDX[\"INDEX&lt;br/&gt;salmon index\"]\n    R([paired-end reads]) --&gt;|fromFilePairs| RP([read pairs per sample])\n    IDX --&gt; Q[\"QUANTIFICATION&lt;br/&gt;salmon quant\"]\n    RP --&gt; Q\n    RP --&gt; FQ[\"FASTQC\"]\n    Q --&gt; M[\"MULTIQC\"]\n    FQ --&gt; M\n    M --&gt; REP([multiqc_report.html])\n\n\n\n\n\n\n\nINDEX: Salmon turns the transcriptome into a searchable index. This is done once.\nQUANTIFICATION: for each sample, Salmon estimates how much of each transcript is present.\nFASTQC: checks read quality. It runs at the same time as quantification, because neither needs the other.\nMULTIQC: waits for everything and makes one report.\n\n\nRunning on the cluster: nextflow.config\nRunning on the login node is not allowed on a cluster, so we told Nextflow to send every task to SLURM. This file is read automatically when it is in the folder where I run Nextflow:\n\n\nnextflow.config\n\nprocess {\n    executor = \"slurm\"\n    time = '2.h'          // default time for every process\n    cpus = 4\n\n    withName: 'INDEX' {   // settings only for the INDEX process\n        time = 15.m\n        cpus = 2\n    }\n    withName: 'QUANTIFICATION' {\n        time = 30.m\n        cpus = 2\n    }\n}\n\nresume = true             // always resume, no need to type -resume\nsingularity.enabled = true\n\nexecutor {\n    account = '&lt;project_ID&gt;'\n}\n\n\n\nChannels of read pairs\nSalmon needs both files of a pair together. fromFilePairs groups them by sample name. The {1,2} marks the part of the file name that differs:\nread_pairs_ch = channel.fromFilePairs(params.reads)\nread_pairs_ch.view()\n// [gut, [/.../gut_1.fq, /.../gut_2.fq]]   &lt;- a tuple: sample ID + list of two files\n\n\nThe complete workflow\nThis is roughly what my final script looked like. Each process gets its tool from a container, which is more reproducible than installing the tools in the environment:\n\n\nscript7.nf\n\n#!/usr/bin/env nextflow\n\nparams.reads              = \"$projectDir/data/ggal/gut_{1,2}.fq\"\nparams.transcriptome_file = \"$projectDir/data/ggal/transcriptome.fa\"\nparams.outdir             = \"results\"\n\nworkflow {\n    read_pairs_ch = channel.fromFilePairs(params.reads, checkIfExists: true)\n\n    index_ch  = INDEX(file(params.transcriptome_file, checkIfExists: true))\n    quant_ch  = QUANTIFICATION(index_ch, read_pairs_ch)\n    fastqc_ch = FASTQC(read_pairs_ch)\n\n    // mix: put both channels together; collect: wait for all and pass them as ONE item\n    MULTIQC(quant_ch.mix(fastqc_ch).collect())\n}\n\nprocess INDEX {\n    container 'oras://community.wave.seqera.io/library/salmon:2.7.0--cb05356ce9eb88b7'\n\n    input:\n    path transcriptome\n\n    output:\n    path 'salmon_index'\n\n    script:\n    \"\"\"\n    salmon index --threads $task.cpus -t $transcriptome -i salmon_index\n    \"\"\"\n}\n\nprocess QUANTIFICATION {\n    tag \"Salmon on $sample_id\"\n    container 'oras://community.wave.seqera.io/library/salmon:2.7.0--cb05356ce9eb88b7'\n    publishDir \"$params.outdir/salmon\", mode: 'copy'\n\n    input:\n    path salmon_index\n    tuple val(sample_id), path(reads)\n\n    output:\n    path \"$sample_id\"\n\n    script:\n    \"\"\"\n    salmon quant --threads $task.cpus --libType=U -i $salmon_index -1 ${reads[0]} -2 ${reads[1]} -o $sample_id\n    \"\"\"\n}\n\nprocess FASTQC {\n    tag \"FastQC on $sample_id\"\n    container '&lt;fastqc container address from Seqera&gt;'\n\n    input:\n    tuple val(sample_id), path(reads)\n\n    output:\n    path \"fastqc_${sample_id}_logs\"\n\n    script:\n    \"\"\"\n    mkdir fastqc_${sample_id}_logs\n    fastqc -o fastqc_${sample_id}_logs -f fastq -q ${reads}\n    \"\"\"\n}\n\nprocess MULTIQC {\n    container '&lt;multiqc container address from Seqera&gt;'\n    publishDir \"$params.outdir/multiqc\", mode: 'copy'\n\n    input:\n    path '*'\n\n    output:\n    path 'multiqc_report.html'\n\n    script:\n    \"\"\"\n    multiqc .\n    \"\"\"\n}\n\n\n# run on all three samples (gut, liver, lung)\npixi run nextflow run script7.nf --reads 'data/ggal/*_{1,2}.fq'\n\n\n\n\n\n\n\nTippublishDir and mode: 'copy'\n\n\n\nBy default, publishDir only makes links to files inside work/. If I clean work/, the results disappear. mode: 'copy' makes real copies that survive the cleanup."
-  },
-  {
-    "objectID": "posts/wednesday/index.html#cheat-sheet",
-    "href": "posts/wednesday/index.html#cheat-sheet",
-    "title": "Wednesday: Containers and my first Nextflow workflows",
-    "section": "Cheat sheet",
-    "text": "Cheat sheet\n\n\n\n\n\n\n\nI want to…\nCommand\n\n\n\n\ndownload an image\napptainer pull &lt;name&gt;.sif docker://... or oras://...\n\n\nrun a tool in a container\napptainer exec &lt;image&gt;.sif &lt;command&gt;\n\n\nwork inside a container\napptainer shell &lt;image&gt;.sif\n\n\nmake a folder visible inside\n-B outside/path:inside/path\n\n\nbuild an image\napptainer build &lt;name&gt;.sif &lt;name&gt;.def\n\n\nrun a Nextflow script\npixi run nextflow run script.nf\n\n\ncontinue where it stopped\nadd -resume\n\n\nchange a parameter\nadd --param_name value\n\n\nsee previous runs / clean up\nnextflow log / nextflow clean -f"
-  },
-  {
-    "objectID": "posts/wednesday/index.html#notes",
-    "href": "posts/wednesday/index.html#notes",
-    "title": "Wednesday: Containers and my first Nextflow workflows",
-    "section": "Notes",
-    "text": "Notes"
-  },
-  {
     "objectID": "posts/tuesday/index.html",
     "href": "posts/tuesday/index.html",
     "title": "Tuesday: Pixi environments and quality control of RNA-seq data",
@@ -220,48 +143,6 @@
     "objectID": "posts/monday/index.html#notes",
     "href": "posts/monday/index.html#notes",
     "title": "Monday",
-    "section": "Notes",
-    "text": "Notes"
-  },
-  {
-    "objectID": "posts/friday/index.html",
-    "href": "posts/friday/index.html",
-    "title": "Friday: Plotting with ggplot2 and a discussion about AI in bioinformatics",
-    "section": "",
-    "text": "In the morning we learned how to make plots in R with ggplot2 and worked through the NBIS ggplot tutorial. In the afternoon we had a discussion about AI in bioinformatics.\nAll code chunks in this post really run when the blog is built."
-  },
-  {
-    "objectID": "posts/friday/index.html#what-we-did-today",
-    "href": "posts/friday/index.html#what-we-did-today",
-    "title": "Friday: Plotting with ggplot2 and a discussion about AI in bioinformatics",
-    "section": "",
-    "text": "In the morning we learned how to make plots in R with ggplot2 and worked through the NBIS ggplot tutorial. In the afternoon we had a discussion about AI in bioinformatics.\nAll code chunks in this post really run when the blog is built."
-  },
-  {
-    "objectID": "posts/friday/index.html#part-1-ggplot2",
-    "href": "posts/friday/index.html#part-1-ggplot2",
-    "title": "Friday: Plotting with ggplot2 and a discussion about AI in bioinformatics",
-    "section": "Part 1: ggplot2",
-    "text": "Part 1: ggplot2\n\nSetup\n\ninstall.packages(\"ggplot2\")   # only needed once\n\n\nlibrary(ggplot2)\n\n\n\nThe grammar of graphics\nEvery ggplot is built from the same layers, added with +:\n\n\n\n\n\n\n\n\nLayer\nQuestion it answers\nExample\n\n\n\n\ndata\nwhich table?\nggplot(iris, ...)\n\n\naesthetics aes()\nwhich column goes where (x, y, colour, size…)?\naes(x = Sepal.Length, colour = Species)\n\n\ngeoms\nwhat shape? points, lines, boxes…\ngeom_point(), geom_boxplot()\n\n\nfacets\nsplit into small panels?\nfacet_wrap(~ Species)\n\n\nscales\nhow values map to colours/axes\nscale_colour_manual(), scale_y_log10()\n\n\nlabels\ntitles and axis names\nlabs(title = ..., x = ...)\n\n\ntheme\nthe look (background, fonts…)\ntheme_bw()\n\n\n\nThe data must be in long (“tidy”) format: one row per observation, one column per variable.\n\n\n1. A first plot\niris is a dataset built into R: flower measurements from three species.\n\nggplot(data = iris, mapping = aes(x = Sepal.Length, y = Petal.Length)) +\n  geom_point()\n\n\n\n\n\n\n\nFigure 1: The simplest ggplot: data + aesthetics + one geom.\n\n\n\n\n\n\n\n2. Colour, labels and a theme\n\nggplot(iris, aes(x = Sepal.Length, y = Petal.Length, colour = Species)) +\n  geom_point(size = 2, alpha = 0.7) +\n  labs(\n    title = \"Petal length vs sepal length\",\n    x = \"Sepal length (cm)\",\n    y = \"Petal length (cm)\",\n    colour = \"Species\"\n  ) +\n  theme_bw()\n\n\n\n\n\n\n\nFigure 2: Colour mapped to species, with labels and a cleaner theme.\n\n\n\n\n\n\n\n\n\n\n\nImportantInside or outside aes()?\n\n\n\n\nInside aes() = depends on the data: aes(colour = Species) gives each species its own colour.\nOutside aes() = the same for everything: geom_point(colour = \"blue\") makes all points blue.\n\nWriting aes(colour = \"blue\") is a classic mistake. ggplot treats “blue” as a data value and makes a legend for it.\n\n\n\n\n3. Boxplots with the data points on top\n\nggplot(iris, aes(x = Species, y = Petal.Width, fill = Species)) +\n  geom_boxplot(alpha = 0.5, outlier.shape = NA) +\n  geom_jitter(width = 0.15, alpha = 0.6) +\n  labs(x = NULL, y = \"Petal width (cm)\") +\n  theme_classic() +\n  theme(legend.position = \"none\")\n\n\n\n\n\n\n\nFigure 3: A boxplot shows the distribution. Jittered points show every observation.\n\n\n\n\n\n\n\n4. Facets and trend lines\n\nggplot(iris, aes(x = Sepal.Length, y = Sepal.Width)) +\n  geom_point(colour = \"steelblue\") +\n  geom_smooth(method = \"lm\", colour = \"black\") +\n  facet_wrap(~ Species) +\n  theme_bw()\n\n\n\n\n\n\n\nFigure 4: One panel per species, each with a linear trend line.\n\n\n\n\n\n\n\n5. A volcano plot (simulated data)\nA volcano plot is the classic way to show a differential expression result: fold change on the x-axis, significance on the y-axis. The data below is simulated, just to practise the plot.\n\nset.seed(42)\nn_genes &lt;- 2000\nde &lt;- data.frame(\n  gene   = paste0(\"gene_\", seq_len(n_genes)),\n  log2FC = rnorm(n_genes, mean = 0, sd = 1.2)\n)\nde$pvalue &lt;- 10^(-abs(de$log2FC) * runif(n_genes, 0.5, 3))\nde$direction &lt;- ifelse(de$pvalue &lt; 0.01 & de$log2FC &gt;  1, \"Up\",\n                ifelse(de$pvalue &lt; 0.01 & de$log2FC &lt; -1, \"Down\", \"Not significant\"))\nhead(de)\n\n    gene     log2FC       pvalue       direction\n1 gene_1  1.6451501 0.0005177275              Up\n2 gene_2 -0.6776378 0.0104638682 Not significant\n3 gene_3  0.4357541 0.2273419244 Not significant\n4 gene_4  0.7594351 0.0100262655 Not significant\n5 gene_5  0.4851220 0.5083378570 Not significant\n6 gene_6 -0.1273494 0.6325646647 Not significant\n\ntable(de$direction)\n\n\n           Down Not significant              Up \n            293            1444             263 \n\n\n\nggplot(de, aes(x = log2FC, y = -log10(pvalue), colour = direction)) +\n  geom_point(alpha = 0.6, size = 1.2) +\n  geom_vline(xintercept = c(-1, 1), linetype = \"dashed\") +\n  geom_hline(yintercept = -log10(0.01), linetype = \"dashed\") +\n  scale_colour_manual(values = c(\"Down\" = \"#2166ac\",\n                                 \"Not significant\" = \"grey75\",\n                                 \"Up\" = \"#b2182b\")) +\n  labs(x = \"log2 fold change\", y = \"-log10(p-value)\", colour = NULL) +\n  theme_minimal()\n\n\n\n\n\n\n\nFigure 5: Volcano plot of simulated data. Dashed lines show the cut-offs |log2FC| &gt; 1 and p &lt; 0.01.\n\n\n\n\n\n\n\n6. Saving a plot\n\np &lt;- ggplot(iris, aes(Sepal.Length, Petal.Length, colour = Species)) + geom_point()\nggsave(\"my_plot.png\", plot = p, width = 6, height = 4, dpi = 300)\nggsave(\"my_plot.pdf\", plot = p, width = 6, height = 4)   # vector format, good for papers"
-  },
-  {
-    "objectID": "posts/friday/index.html#part-2-ai-in-bioinformatics",
-    "href": "posts/friday/index.html#part-2-ai-in-bioinformatics",
-    "title": "Friday: Plotting with ggplot2 and a discussion about AI in bioinformatics",
-    "section": "Part 2: AI in bioinformatics",
-    "text": "Part 2: AI in bioinformatics\nThe afternoon was a discussion, not a coding session. These are the main ideas I took away.\nMachine learning is not new in bioinformatics. Supervised learning (classification, regression) and unsupervised learning (clustering, dimensionality reduction like PCA) have been used for decades. Generative AI and large language models (LLMs) are the newest step.\nLLMs predict text, they don’t “know” things. They are trained on huge amounts of internet text, including biased and wrong content. They rarely say “I don’t know” and can hallucinate answers, including citations that don’t exist. Every reference an AI gives me must be checked.\nData privacy. Sequencing and patient data are sensitive. Pasting data into an online chatbot can send it to a company’s servers, depending on the terms of service. A safer habit is to describe the data (column names, data types) instead of uploading it. Local, open-weight models keep everything on my own computer, but need good hardware and are usually less capable.\nLearning and productivity. Relying on AI too much can mean learning less. Studies discussed in the course suggest it does not always make experienced people faster either.\nResponsibility. I am responsible for everything I use, no matter who (or what) wrote it.\nEnvironmental cost. Data centres use a lot of electricity and water, so it is worth thinking before sending a query.\nAI and reproducibility. The habits from this week (version control, clear folder structure, documented decisions) also make it easier for an AI assistant, or a human colleague, to understand and help with a project.\nThe “4 Ds” of working with AI (AI Fluency framework):\n\nDelegation: deciding whether, when and how to use AI at all.\nDescription: explaining clearly what I want.\nDiscernment: judging critically whether the answer is good.\nDiligence: taking responsibility and being open about how I used AI.\n\nQuestions to ask myself before using AI: Can I find this another way, for example in the documentation or on Biostars? Do I know enough to notice if the answer is wrong? What could go wrong if I test the suggestion on my data or system?"
-  },
-  {
-    "objectID": "posts/friday/index.html#cheat-sheet",
-    "href": "posts/friday/index.html#cheat-sheet",
-    "title": "Friday: Plotting with ggplot2 and a discussion about AI in bioinformatics",
-    "section": "Cheat sheet",
-    "text": "Cheat sheet\n\n\n\n\n\n\n\nI want to…\nCode\n\n\n\n\nstart a plot\nggplot(data, aes(x = ..., y = ...))\n\n\nscatter / line / bar / boxplot\ngeom_point(), geom_line(), geom_col(), geom_boxplot()\n\n\ncolour by a column\naes(colour = column) (or fill = for areas)\n\n\none fixed colour\ngeom_point(colour = \"blue\")\n\n\nsplit into panels\nfacet_wrap(~ column)\n\n\nadd a trend line\ngeom_smooth(method = \"lm\")\n\n\nset titles and axis names\nlabs(title = , x = , y = )\n\n\nchange the look\ntheme_bw(), theme_minimal(), theme(legend.position = \"none\")\n\n\nsave\nggsave(\"plot.png\", width = , height = , dpi = 300)"
-  },
-  {
-    "objectID": "posts/friday/index.html#notes",
-    "href": "posts/friday/index.html#notes",
-    "title": "Friday: Plotting with ggplot2 and a discussion about AI in bioinformatics",
     "section": "Notes",
     "text": "Notes"
   },
@@ -416,6 +297,125 @@
     "objectID": "index.html#notes",
     "href": "index.html#notes",
     "title": "Monday: Building this blog with Quarto and publishing it with GitHub Actions",
+    "section": "Notes",
+    "text": "Notes"
+  },
+  {
+    "objectID": "about.html",
+    "href": "about.html",
+    "title": "Zana Brilej",
+    "section": "",
+    "text": "Hi! I am Zana, a second-year PhD student at Karolinska Institutet. As you can see I love pasta. I spend most of my free time dancing, running, and beeing outdoors."
+  },
+  {
+    "objectID": "about.html#about-me",
+    "href": "about.html#about-me",
+    "title": "Zana Brilej",
+    "section": "",
+    "text": "Hi! I am Zana, a second-year PhD student at Karolinska Institutet. As you can see I love pasta. I spend most of my free time dancing, running, and beeing outdoors."
+  },
+  {
+    "objectID": "about.html#my-research",
+    "href": "about.html#my-research",
+    "title": "Zana Brilej",
+    "section": "My research",
+    "text": "My research\nMy PhD project is about immune evasion in Merkel cell carcinoma, a rare and aggressive skin cancer. I am trying to understand why some tumours do not respond to immunotherapy."
+  },
+  {
+    "objectID": "about.html#why-this-blog",
+    "href": "about.html#why-this-blog",
+    "title": "Zana Brilej",
+    "section": "Why this blog?",
+    "text": "Why this blog?\nI started this blog during the course Reproducible Research in Bioinformatics and Computational Biology (September 2026). I use it as a report of what we did during the course, and a notebook I can come back to whenever I need to remember how to use the tools we learned."
+  },
+  {
+    "objectID": "posts/friday/index.html",
+    "href": "posts/friday/index.html",
+    "title": "Friday: Plotting with ggplot2 and a discussion about AI in bioinformatics",
+    "section": "",
+    "text": "In the morning we learned how to make plots in R with ggplot2 and worked through the NBIS ggplot tutorial. In the afternoon we had a discussion about AI in bioinformatics.\nAll code chunks in this post really run when the blog is built."
+  },
+  {
+    "objectID": "posts/friday/index.html#what-we-did-today",
+    "href": "posts/friday/index.html#what-we-did-today",
+    "title": "Friday: Plotting with ggplot2 and a discussion about AI in bioinformatics",
+    "section": "",
+    "text": "In the morning we learned how to make plots in R with ggplot2 and worked through the NBIS ggplot tutorial. In the afternoon we had a discussion about AI in bioinformatics.\nAll code chunks in this post really run when the blog is built."
+  },
+  {
+    "objectID": "posts/friday/index.html#part-1-ggplot2",
+    "href": "posts/friday/index.html#part-1-ggplot2",
+    "title": "Friday: Plotting with ggplot2 and a discussion about AI in bioinformatics",
+    "section": "Part 1: ggplot2",
+    "text": "Part 1: ggplot2\n\nSetup\n\ninstall.packages(\"ggplot2\")   # only needed once\n\n\nlibrary(ggplot2)\n\n\n\nThe grammar of graphics\nEvery ggplot is built from the same layers, added with +:\n\n\n\n\n\n\n\n\nLayer\nQuestion it answers\nExample\n\n\n\n\ndata\nwhich table?\nggplot(iris, ...)\n\n\naesthetics aes()\nwhich column goes where (x, y, colour, size…)?\naes(x = Sepal.Length, colour = Species)\n\n\ngeoms\nwhat shape? points, lines, boxes…\ngeom_point(), geom_boxplot()\n\n\nfacets\nsplit into small panels?\nfacet_wrap(~ Species)\n\n\nscales\nhow values map to colours/axes\nscale_colour_manual(), scale_y_log10()\n\n\nlabels\ntitles and axis names\nlabs(title = ..., x = ...)\n\n\ntheme\nthe look (background, fonts…)\ntheme_bw()\n\n\n\nThe data must be in long (“tidy”) format: one row per observation, one column per variable.\n\n\n1. A first plot\niris is a dataset built into R: flower measurements from three species.\n\nggplot(data = iris, mapping = aes(x = Sepal.Length, y = Petal.Length)) +\n  geom_point()\n\n\n\n\n\n\n\nFigure 1: The simplest ggplot: data + aesthetics + one geom.\n\n\n\n\n\n\n\n2. Colour, labels and a theme\n\nggplot(iris, aes(x = Sepal.Length, y = Petal.Length, colour = Species)) +\n  geom_point(size = 2, alpha = 0.7) +\n  labs(\n    title = \"Petal length vs sepal length\",\n    x = \"Sepal length (cm)\",\n    y = \"Petal length (cm)\",\n    colour = \"Species\"\n  ) +\n  theme_bw()\n\n\n\n\n\n\n\nFigure 2: Colour mapped to species, with labels and a cleaner theme.\n\n\n\n\n\n\n\n\n\n\n\nImportantInside or outside aes()?\n\n\n\n\nInside aes() = depends on the data: aes(colour = Species) gives each species its own colour.\nOutside aes() = the same for everything: geom_point(colour = \"blue\") makes all points blue.\n\nWriting aes(colour = \"blue\") is a classic mistake. ggplot treats “blue” as a data value and makes a legend for it.\n\n\n\n\n3. Boxplots with the data points on top\n\nggplot(iris, aes(x = Species, y = Petal.Width, fill = Species)) +\n  geom_boxplot(alpha = 0.5, outlier.shape = NA) +\n  geom_jitter(width = 0.15, alpha = 0.6) +\n  labs(x = NULL, y = \"Petal width (cm)\") +\n  theme_classic() +\n  theme(legend.position = \"none\")\n\n\n\n\n\n\n\nFigure 3: A boxplot shows the distribution. Jittered points show every observation.\n\n\n\n\n\n\n\n4. Facets and trend lines\n\nggplot(iris, aes(x = Sepal.Length, y = Sepal.Width)) +\n  geom_point(colour = \"steelblue\") +\n  geom_smooth(method = \"lm\", colour = \"black\") +\n  facet_wrap(~ Species) +\n  theme_bw()\n\n\n\n\n\n\n\nFigure 4: One panel per species, each with a linear trend line.\n\n\n\n\n\n\n\n5. A volcano plot (simulated data)\nA volcano plot is the classic way to show a differential expression result: fold change on the x-axis, significance on the y-axis. The data below is simulated, just to practise the plot.\n\nset.seed(42)\nn_genes &lt;- 2000\nde &lt;- data.frame(\n  gene   = paste0(\"gene_\", seq_len(n_genes)),\n  log2FC = rnorm(n_genes, mean = 0, sd = 1.2)\n)\nde$pvalue &lt;- 10^(-abs(de$log2FC) * runif(n_genes, 0.5, 3))\nde$direction &lt;- ifelse(de$pvalue &lt; 0.01 & de$log2FC &gt;  1, \"Up\",\n                ifelse(de$pvalue &lt; 0.01 & de$log2FC &lt; -1, \"Down\", \"Not significant\"))\nhead(de)\n\n    gene     log2FC       pvalue       direction\n1 gene_1  1.6451501 0.0005177275              Up\n2 gene_2 -0.6776378 0.0104638682 Not significant\n3 gene_3  0.4357541 0.2273419244 Not significant\n4 gene_4  0.7594351 0.0100262655 Not significant\n5 gene_5  0.4851220 0.5083378570 Not significant\n6 gene_6 -0.1273494 0.6325646647 Not significant\n\ntable(de$direction)\n\n\n           Down Not significant              Up \n            293            1444             263 \n\n\n\nggplot(de, aes(x = log2FC, y = -log10(pvalue), colour = direction)) +\n  geom_point(alpha = 0.6, size = 1.2) +\n  geom_vline(xintercept = c(-1, 1), linetype = \"dashed\") +\n  geom_hline(yintercept = -log10(0.01), linetype = \"dashed\") +\n  scale_colour_manual(values = c(\"Down\" = \"#2166ac\",\n                                 \"Not significant\" = \"grey75\",\n                                 \"Up\" = \"#b2182b\")) +\n  labs(x = \"log2 fold change\", y = \"-log10(p-value)\", colour = NULL) +\n  theme_minimal()\n\n\n\n\n\n\n\nFigure 5: Volcano plot of simulated data. Dashed lines show the cut-offs |log2FC| &gt; 1 and p &lt; 0.01.\n\n\n\n\n\n\n\n6. Saving a plot\n\np &lt;- ggplot(iris, aes(Sepal.Length, Petal.Length, colour = Species)) + geom_point()\nggsave(\"my_plot.png\", plot = p, width = 6, height = 4, dpi = 300)\nggsave(\"my_plot.pdf\", plot = p, width = 6, height = 4)   # vector format, good for papers"
+  },
+  {
+    "objectID": "posts/friday/index.html#part-2-ai-in-bioinformatics",
+    "href": "posts/friday/index.html#part-2-ai-in-bioinformatics",
+    "title": "Friday: Plotting with ggplot2 and a discussion about AI in bioinformatics",
+    "section": "Part 2: AI in bioinformatics",
+    "text": "Part 2: AI in bioinformatics\nThe afternoon was a discussion, not a coding session. These are the main ideas I took away.\nMachine learning is not new in bioinformatics. Supervised learning (classification, regression) and unsupervised learning (clustering, dimensionality reduction like PCA) have been used for decades. Generative AI and large language models (LLMs) are the newest step.\nLLMs predict text, they don’t “know” things. They are trained on huge amounts of internet text, including biased and wrong content. They rarely say “I don’t know” and can hallucinate answers, including citations that don’t exist. Every reference an AI gives me must be checked.\nData privacy. Sequencing and patient data are sensitive. Pasting data into an online chatbot can send it to a company’s servers, depending on the terms of service. A safer habit is to describe the data (column names, data types) instead of uploading it. Local, open-weight models keep everything on my own computer, but need good hardware and are usually less capable.\nLearning and productivity. Relying on AI too much can mean learning less. Studies discussed in the course suggest it does not always make experienced people faster either.\nResponsibility. I am responsible for everything I use, no matter who (or what) wrote it.\nEnvironmental cost. Data centres use a lot of electricity and water, so it is worth thinking before sending a query.\nAI and reproducibility. The habits from this week (version control, clear folder structure, documented decisions) also make it easier for an AI assistant, or a human colleague, to understand and help with a project.\nThe “4 Ds” of working with AI (AI Fluency framework):\n\nDelegation: deciding whether, when and how to use AI at all.\nDescription: explaining clearly what I want.\nDiscernment: judging critically whether the answer is good.\nDiligence: taking responsibility and being open about how I used AI.\n\nQuestions to ask myself before using AI: Can I find this another way, for example in the documentation or on Biostars? Do I know enough to notice if the answer is wrong? What could go wrong if I test the suggestion on my data or system?"
+  },
+  {
+    "objectID": "posts/friday/index.html#cheat-sheet",
+    "href": "posts/friday/index.html#cheat-sheet",
+    "title": "Friday: Plotting with ggplot2 and a discussion about AI in bioinformatics",
+    "section": "Cheat sheet",
+    "text": "Cheat sheet\n\n\n\n\n\n\n\nI want to…\nCode\n\n\n\n\nstart a plot\nggplot(data, aes(x = ..., y = ...))\n\n\nscatter / line / bar / boxplot\ngeom_point(), geom_line(), geom_col(), geom_boxplot()\n\n\ncolour by a column\naes(colour = column) (or fill = for areas)\n\n\none fixed colour\ngeom_point(colour = \"blue\")\n\n\nsplit into panels\nfacet_wrap(~ column)\n\n\nadd a trend line\ngeom_smooth(method = \"lm\")\n\n\nset titles and axis names\nlabs(title = , x = , y = )\n\n\nchange the look\ntheme_bw(), theme_minimal(), theme(legend.position = \"none\")\n\n\nsave\nggsave(\"plot.png\", width = , height = , dpi = 300)"
+  },
+  {
+    "objectID": "posts/friday/index.html#notes",
+    "href": "posts/friday/index.html#notes",
+    "title": "Friday: Plotting with ggplot2 and a discussion about AI in bioinformatics",
+    "section": "Notes",
+    "text": "Notes"
+  },
+  {
+    "objectID": "posts/wednesday/index.html",
+    "href": "posts/wednesday/index.html",
+    "title": "Wednesday: Containers and my first Nextflow workflows",
+    "section": "",
+    "text": "First we learned about containers and ran our QC tools inside them with Apptainer. Then we learned the basics of the workflow manager Nextflow and used it to build a small RNA-seq workflow (index → quantify → QC → report)."
+  },
+  {
+    "objectID": "posts/wednesday/index.html#what-we-did-today",
+    "href": "posts/wednesday/index.html#what-we-did-today",
+    "title": "Wednesday: Containers and my first Nextflow workflows",
+    "section": "",
+    "text": "First we learned about containers and ran our QC tools inside them with Apptainer. Then we learned the basics of the workflow manager Nextflow and used it to build a small RNA-seq workflow (index → quantify → QC → report)."
+  },
+  {
+    "objectID": "posts/wednesday/index.html#part-1-containers",
+    "href": "posts/wednesday/index.html#part-1-containers",
+    "title": "Wednesday: Containers and my first Nextflow workflows",
+    "section": "Part 1: Containers",
+    "text": "Part 1: Containers\n\nWhat is a container?\nA Pixi environment packs the tools. A container goes one step further: it packs the tools and a whole operating system into a single file, called an image. Because the operating system travels with it, a container runs the same way on my laptop, on a colleague’s computer and on a cluster. Images do not change once they are built, so they stay stable over time.\nPopular container programs are Docker, Podman and Apptainer (earlier called Singularity). On shared servers like HPC2N, Apptainer is the right choice.\n\n\nGetting an image\nTwo good places to find images:\n\nDocker Hub: images that people have uploaded. The biocontainers profile has many well-built bioinformatics tools.\nSeqera Containers: builds an image on request from conda-forge/bioconda packages, and can put several tools into one image. Choose Singularity as the format.\n\n\n# from Docker Hub (note the docker:// prefix)\napptainer pull vcftools_0.1.16-1.sif docker://biocontainers/vcftools:v0.1.16-1-deb_cv1\n\n# from Seqera (note the oras:// prefix)\napptainer pull vcftools_0.1.17.sif oras://community.wave.seqera.io/library/vcftools:0.1.17--b541aa8d9f9213f9\n\nThe first name (vcftools_0.1.17.sif) is what the file is called on my computer. Putting the tool name and version in it makes it clear what is inside.\n\n\nUsing a container\n\n# run one command inside the container (\"from the outside\")\napptainer exec vcftools_0.1.17.sif vcftools --version\n\n# open a shell inside the container (\"from the inside\"), type exit to leave\napptainer shell vcftools_0.1.17.sif\n\n# make a folder from outside visible inside the container with -B outside:inside\napptainer exec -B ../data:/rawdata fastqc_0.12.1.sif ls /rawdata\n\nexec vs run:\n\napptainer exec runs the command I give it. This is what I use most.\napptainer run first runs the container’s built-in runscript (its default action).\n\n\n\nBuilding my own container\nIf nobody has made an image for a tool, I can build one from a definition file. The course example was a cow that tells the date:\n\n\nlolcow.def\n\nBootstrap: docker\nFrom: ubuntu:22.04\n\n%post\n    apt-get -y update\n    apt-get -y install cowsay lolcat fortune\n\n%environment\n    export LC_ALL=C\n    export PATH=/usr/games:$PATH\n\n%runscript\n    date | cowsay | lolcat\n\n\nFrom: which operating system to start from\n%post commands that install things\n%environment settings available when the container runs\n%runscript what apptainer run does\n\n\napptainer build lolcow.sif lolcow.def\napptainer run lolcow.sif\n\n\n\nQC with containers\nWe repeated Tuesday’s QC, but with FastQC and MultiQC from containers instead of the Pixi environment. The only change in the SLURM script is the command line:\n\n\nscripts/fastqc_container.sh\n\n#! /bin/bash -l\n#SBATCH -A &lt;project_ID&gt;\n#SBATCH -t 30:00\n#SBATCH -n 1\n\napptainer exec ../containers/fastqc_0.12.1.sif fastqc -o ../fastqc --noextract ../data/*fastq.gz\n\nMultiQC from the outside and from the inside:\n\n# outside\napptainer exec containers/multiqc.sif multiqc fastqc -o multiqc\n\n# inside\napptainer shell containers/multiqc.sif\nmultiqc fastqc -o multiqc\nexit"
+  },
+  {
+    "objectID": "posts/wednesday/index.html#part-2-nextflow-basics",
+    "href": "posts/wednesday/index.html#part-2-nextflow-basics",
+    "title": "Wednesday: Containers and my first Nextflow workflows",
+    "section": "Part 2: Nextflow basics",
+    "text": "Part 2: Nextflow basics\n\nWhy a workflow manager?\nA real analysis is a chain of steps, and each step runs on many samples. Nextflow:\n\nconnects the steps so the output of one becomes the input of the next,\nruns independent tasks in parallel,\nremembers what already finished, so I can resume after an error,\nseparates what to run (the workflow) from where to run it (laptop, cluster, cloud). This is called execution abstraction.\n\n\n\nThe building blocks\n\nprocess: one step, e.g. “run FastQC”. It has input, output and a script.\nchannel: a queue that carries data from one process to the next.\nworkflow: the part that connects processes and channels.\nexecutor: where the tasks run (local or slurm).\n\n\n\n\n\n\nflowchart LR\n    A([\"greeting_ch&lt;br/&gt;'Hello world!'\"]) --&gt; B[\"SPLITLETTERS\"]\n    B --&gt; C([\"chunk_aa, chunk_ab\"])\n    C --&gt;|flatten| D[\"CONVERTTOUPPER\"]\n    D --&gt; E([\"HELLO&lt;br/&gt;WORLD!\"])\n\n\n\n\n\n\n\n\nSetting up\n\nscreen -S nextflow\ncp -r /path/to/repbio26/common_data/nf-training .\ncd nf-training\npixi init -c conda-forge -c bioconda\npixi add nextflow\n\n\n\nhello.nf\n\n\nhello.nf\n\n#!/usr/bin/env nextflow\n\nparams.greeting = 'Hello world!'          // a parameter I can change from the command line\n\nprocess SPLITLETTERS {\n    input:\n    val x                                  // a value\n\n    output:\n    path 'chunk_*'                         // files starting with chunk_\n\n    script:\n    \"\"\"\n    printf '$x' | split -b 6 - chunk_\n    \"\"\"\n}\n\nprocess CONVERTTOUPPER {\n    input:\n    path y\n\n    output:\n    stdout                                 // whatever is printed\n\n    script:\n    \"\"\"\n    cat $y | tr '[a-z]' '[A-Z]'\n    \"\"\"\n}\n\nworkflow {\n    greeting_ch = Channel.of(params.greeting)\n    letters_ch  = SPLITLETTERS(greeting_ch)\n    results_ch  = CONVERTTOUPPER(letters_ch.flatten())   // flatten: one task per chunk\n    results_ch.view{ it }\n}\n\n\npixi run nextflow run hello.nf\n\nOutput:\nexecutor &gt;  local (3)\n[96/fd5f07] SPLITLETTERS (1)   [100%] 1 of 1 ✔\n[7e/dad424] CONVERTTOUPPER (2) [100%] 2 of 2 ✔\nHELLO\nWORLD!\nThe codes like 96/fd5f07 are the start of the folder in work/ where that task ran. It is useful for debugging. HELLO and WORLD! can come in any order because the two tasks run in parallel.\n\n\nResume and parameters\n\n# after changing a process: only the changed part is re-run, the rest comes from the cache\npixi run nextflow run hello.nf -resume\n\n# change a parameter from the command line (two dashes = pipeline parameter)\npixi run nextflow run hello.nf -resume --greeting 'Bonjour le monde!'\n\n\n\n\n\n\n\nNoteOne dash or two?\n\n\n\n-resume has one dash, so it is an option for Nextflow itself. --greeting has two dashes, so it is a parameter of my pipeline.\n\n\nSettings can come from many places. The most important ones, from strongest to weakest: command line (--param) → -params-file → -c my.config → nextflow.config in the current folder → values in the script.\n\n\nCleaning up\nThe work/ folder grows fast.\n\npixi run nextflow log                        # list previous runs in this folder\npixi run nextflow clean -f                   # remove work files\npixi run nextflow clean -before &lt;run_name&gt; -f"
+  },
+  {
+    "objectID": "posts/wednesday/index.html#part-3-a-simple-rna-seq-workflow-with-nextflow",
+    "href": "posts/wednesday/index.html#part-3-a-simple-rna-seq-workflow-with-nextflow",
+    "title": "Wednesday: Containers and my first Nextflow workflows",
+    "section": "Part 3: A simple RNA-seq workflow with Nextflow",
+    "text": "Part 3: A simple RNA-seq workflow with Nextflow\nWe built this workflow step by step in script1.nf to script7.nf:\n\n\n\n\n\nflowchart TD\n    T([transcriptome.fa]) --&gt; IDX[\"INDEX&lt;br/&gt;salmon index\"]\n    R([paired-end reads]) --&gt;|fromFilePairs| RP([read pairs per sample])\n    IDX --&gt; Q[\"QUANTIFICATION&lt;br/&gt;salmon quant\"]\n    RP --&gt; Q\n    RP --&gt; FQ[\"FASTQC\"]\n    Q --&gt; M[\"MULTIQC\"]\n    FQ --&gt; M\n    M --&gt; REP([multiqc_report.html])\n\n\n\n\n\n\n\nINDEX: Salmon turns the transcriptome into a searchable index. This is done once.\nQUANTIFICATION: for each sample, Salmon estimates how much of each transcript is present.\nFASTQC: checks read quality. It runs at the same time as quantification, because neither needs the other.\nMULTIQC: waits for everything and makes one report.\n\n\nRunning on the cluster: nextflow.config\nRunning on the login node is not allowed on a cluster, so we told Nextflow to send every task to SLURM. This file is read automatically when it is in the folder where I run Nextflow:\n\n\nnextflow.config\n\nprocess {\n    executor = \"slurm\"\n    time = '2.h'          // default time for every process\n    cpus = 4\n\n    withName: 'INDEX' {   // settings only for the INDEX process\n        time = 15.m\n        cpus = 2\n    }\n    withName: 'QUANTIFICATION' {\n        time = 30.m\n        cpus = 2\n    }\n}\n\nresume = true             // always resume, no need to type -resume\nsingularity.enabled = true\n\nexecutor {\n    account = '&lt;project_ID&gt;'\n}\n\n\n\nChannels of read pairs\nSalmon needs both files of a pair together. fromFilePairs groups them by sample name. The {1,2} marks the part of the file name that differs:\nread_pairs_ch = channel.fromFilePairs(params.reads)\nread_pairs_ch.view()\n// [gut, [/.../gut_1.fq, /.../gut_2.fq]]   &lt;- a tuple: sample ID + list of two files\n\n\nThe complete workflow\nThis is roughly what my final script looked like. Each process gets its tool from a container, which is more reproducible than installing the tools in the environment:\n\n\nscript7.nf\n\n#!/usr/bin/env nextflow\n\nparams.reads              = \"$projectDir/data/ggal/gut_{1,2}.fq\"\nparams.transcriptome_file = \"$projectDir/data/ggal/transcriptome.fa\"\nparams.outdir             = \"results\"\n\nworkflow {\n    read_pairs_ch = channel.fromFilePairs(params.reads, checkIfExists: true)\n\n    index_ch  = INDEX(file(params.transcriptome_file, checkIfExists: true))\n    quant_ch  = QUANTIFICATION(index_ch, read_pairs_ch)\n    fastqc_ch = FASTQC(read_pairs_ch)\n\n    // mix: put both channels together; collect: wait for all and pass them as ONE item\n    MULTIQC(quant_ch.mix(fastqc_ch).collect())\n}\n\nprocess INDEX {\n    container 'oras://community.wave.seqera.io/library/salmon:2.7.0--cb05356ce9eb88b7'\n\n    input:\n    path transcriptome\n\n    output:\n    path 'salmon_index'\n\n    script:\n    \"\"\"\n    salmon index --threads $task.cpus -t $transcriptome -i salmon_index\n    \"\"\"\n}\n\nprocess QUANTIFICATION {\n    tag \"Salmon on $sample_id\"\n    container 'oras://community.wave.seqera.io/library/salmon:2.7.0--cb05356ce9eb88b7'\n    publishDir \"$params.outdir/salmon\", mode: 'copy'\n\n    input:\n    path salmon_index\n    tuple val(sample_id), path(reads)\n\n    output:\n    path \"$sample_id\"\n\n    script:\n    \"\"\"\n    salmon quant --threads $task.cpus --libType=U -i $salmon_index -1 ${reads[0]} -2 ${reads[1]} -o $sample_id\n    \"\"\"\n}\n\nprocess FASTQC {\n    tag \"FastQC on $sample_id\"\n    container '&lt;fastqc container address from Seqera&gt;'\n\n    input:\n    tuple val(sample_id), path(reads)\n\n    output:\n    path \"fastqc_${sample_id}_logs\"\n\n    script:\n    \"\"\"\n    mkdir fastqc_${sample_id}_logs\n    fastqc -o fastqc_${sample_id}_logs -f fastq -q ${reads}\n    \"\"\"\n}\n\nprocess MULTIQC {\n    container '&lt;multiqc container address from Seqera&gt;'\n    publishDir \"$params.outdir/multiqc\", mode: 'copy'\n\n    input:\n    path '*'\n\n    output:\n    path 'multiqc_report.html'\n\n    script:\n    \"\"\"\n    multiqc .\n    \"\"\"\n}\n\n\n# run on all three samples (gut, liver, lung)\npixi run nextflow run script7.nf --reads 'data/ggal/*_{1,2}.fq'\n\n\n\n\n\n\n\nTippublishDir and mode: 'copy'\n\n\n\nBy default, publishDir only makes links to files inside work/. If I clean work/, the results disappear. mode: 'copy' makes real copies that survive the cleanup."
+  },
+  {
+    "objectID": "posts/wednesday/index.html#cheat-sheet",
+    "href": "posts/wednesday/index.html#cheat-sheet",
+    "title": "Wednesday: Containers and my first Nextflow workflows",
+    "section": "Cheat sheet",
+    "text": "Cheat sheet\n\n\n\n\n\n\n\nI want to…\nCommand\n\n\n\n\ndownload an image\napptainer pull &lt;name&gt;.sif docker://... or oras://...\n\n\nrun a tool in a container\napptainer exec &lt;image&gt;.sif &lt;command&gt;\n\n\nwork inside a container\napptainer shell &lt;image&gt;.sif\n\n\nmake a folder visible inside\n-B outside/path:inside/path\n\n\nbuild an image\napptainer build &lt;name&gt;.sif &lt;name&gt;.def\n\n\nrun a Nextflow script\npixi run nextflow run script.nf\n\n\ncontinue where it stopped\nadd -resume\n\n\nchange a parameter\nadd --param_name value\n\n\nsee previous runs / clean up\nnextflow log / nextflow clean -f"
+  },
+  {
+    "objectID": "posts/wednesday/index.html#notes",
+    "href": "posts/wednesday/index.html#notes",
+    "title": "Wednesday: Containers and my first Nextflow workflows",
     "section": "Notes",
     "text": "Notes"
   }
