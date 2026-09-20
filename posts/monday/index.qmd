@@ -134,7 +134,7 @@ git commit -m "Create blog"   # save a snapshot with a message
 
 ## 5. Putting the blog on GitHub
 
-On [github.com](https://github.com), create a **new, public, empty** repository (no README, no .gitignore, no license). GitHub then shows the commands under *"…or push an existing repository from the command line"*:
+On [github.com], create a **new, public, empty** repository (no README, no .gitignore, no license). GitHub then shows the commands under *"…or push an existing repository from the command line"*:
 
 ```{bash}
 #| eval: false
